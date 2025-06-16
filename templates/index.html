@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📰 NewsHub - Find Today's Breaking News</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://kit.fontawesome.com/YOUR_KIT_ID.js"  crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-container">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="NewsHub Logo" class="logo-img">
+        <div class="logo-text">
+          <span class="brand-name">NewsHub</span>
+          <p class="subtitle">Discover today's stories</p>
+        </div>
+      </div>
+
+      <button id="theme-toggle">
+        {% if g.theme == 'dark' %}
+          <i class="fas fa-sun"></i> Light Mode
+        {% else %}
+          <i class="fas fa-moon"></i> Dark Mode
+        {% endif %}
+      </button>
+
+      <div class="info">
+        <span class="date"><i class="fas fa-calendar-alt"></i> {{ current_date }}</span>
+        <span class="coverage"><i class="fas fa-globe-americas"></i> Global Coverage</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <section class="hero-section">
+      <h1 class="page-title">Find Today's Breaking News</h1>
+      <p class="description">Search through thousands of articles from trusted sources worldwide. Stay informed with real-time updates.</p>
+    </section>
+
+    <!-- Search Bar -->
+    <div class="centered-search">
+      <form class="search-form" method="POST">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search..." name="keyword" value="{{ keyword }}" />
+        <button class="search-btn" type="submit">Search</button>
+      </form>
+
+      <div class="popular-searches">
+        <p>Popular Searches:</p>
+        <a href="?q=Politics" class="tag">Politics</a>
+        <a href="?q=Technology" class="tag">Technology</a>
+        <a href="?q=Sports" class="tag">Sports</a>
+      </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Results Section -->
+    {% if keyword %}
+      {% if news_results %}
+        <h2 class="results-title">Results for "{{ keyword }}"</h2>
+        <p class="results-count">Found {{ news_results|length }} articles • {{ current_date }}</p>
+
+        <ul class="articles">
+          {% for article in news_results %}
+            <li class="article">
+              <div class="article-image">
+                {% if article.urlToImage %}
+                  <img src="{{ article.urlToImage }}" alt="Article Image">
+                {% else %}
+                  <img src="https://via.placeholder.com/180x120?text=No+Image" alt="No Image">
+                {% endif %}
+              </div>
+              <div class="article-details">
+                <h3>{{ article.title }}</h3>
+                <div class="source">By {{ article.source.name }}</div>
+                <div class="published-at">Published: {{ article.publishedAt }}</div>
+              </div>
+              <button class="summarize-btn" onclick="summarizeArticle(this, '{{ article.url }}', '{{ keyword }}')">Summarize</button>
+              <div class="summary-box" id="summary-{{ loop.index }}"></div>
+            </li>
+          {% endfor %}
+        </ul>
+
+      {% else %}
+        <p class="no-results">No articles found for "{{ keyword }}"</p>
+      {% endif %}
+    {% endif %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 NewsHub. All rights reserved.</p>
+  </footer>
+
+  <!-- JavaScript for AJAX Summarize -->
+  <script>
+    function summarizeArticle(button, url, keyword) {
+      const container = button.parentElement;
+      const summaryBox = document.createElement("div");
+      summaryBox.innerHTML = "<p>Summarizing...</p>";
+      container.appendChild(summaryBox);
+
+      fetch("/summarize-ajax", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "url=" + encodeURIComponent(url)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.summary) {
+          summaryBox.innerHTML = `<strong>Summary:</strong> ${highlight(data.summary, keyword)}`;
+        } else {
+          summaryBox.innerHTML = `<span style="color:red;">${data.error}</span>`;
+        }
+      })
+      .catch(err => {
+        summaryBox.innerHTML = `<span style="color:red;">Network error: ${err.message}</span>`;
+      });
+    }
+
+    function highlight(text, keyword) {
+      if (!keyword || keyword.trim() === "") return text;
+      const regex = new RegExp(`(${keyword})`, 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
+    }
+  </script>
+
+  <!-- JS Theme Toggle -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
