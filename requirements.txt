@@ -3,3 +3,10 @@ PyPDF2
 feedparser
 requests
 scikit-learn
+transformers
+torch
+newspaper3k
+beautifulsoup4
+python-dotenv
+nltk
+sentencepiece
